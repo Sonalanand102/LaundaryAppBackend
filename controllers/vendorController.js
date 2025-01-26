@@ -1,6 +1,7 @@
+const { Op } = require('sequelize');
 const { Vendor, Service, VendorService, Address } = require('../models'); // Import necessary models
 
-// Get all vendors with their services, filtered by city, state, and service
+// Get all vendors with their services, filtered by city, state, and service (with substring matching)
 const getVendors = async (req, res) => {
   try {
     // Destructure query parameters from the request
@@ -12,10 +13,10 @@ const getVendors = async (req, res) => {
     // Add filter for city and state if provided, assuming city and state are in the Address table
     const addressConditions = {};
     if (city) {
-      addressConditions.city = city;
+      addressConditions.city = { [Op.iLike]: `%${city}%` }; // Substring match for city
     }
     if (state) {
-      addressConditions.state = state;
+      addressConditions.state = { [Op.iLike]: `%${state}%` }; // Substring match for state
     }
 
     // Fetch vendors with their associated services and address, and apply filters
@@ -26,12 +27,12 @@ const getVendors = async (req, res) => {
           model: Service,
           as: 'services',
           through: { attributes: [] }, // Exclude the join table attributes
-          where: services ? { name: services } : undefined, // Filter services by name if provided
+          where: services ? { name: { [Op.iLike]: `%${services}%` } } : undefined, // Substring match for service name
         },
         {
           model: Address,
           as: 'address', // Assuming Vendor has a relation to Address
-          where: addressConditions, // Filter by city and state
+          where: addressConditions, // Filter by city and state with substring matching
         },
       ],
     });
